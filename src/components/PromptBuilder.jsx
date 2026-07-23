@@ -1,34 +1,21 @@
-import { savePrompt } from "../services/storage";
-const handleSavePrompt = () => {
-  savePrompt({
-    title,
-
-    prompt: generatedPrompt,
-
-    category,
-
-    qualityScore: "9.2",
-  });
-
-  alert("Prompt Saved Successfully!");
-};
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 import {
   Sparkles,
-  Copy,
-  Check,
   ArrowLeft,
   RotateCcw,
   Loader2,
-  AlertCircle,
+  Save,
+  Check,
 } from "lucide-react";
 
-import { generatePrompt } from "../services/api";
-
+import { createPrompt } from "../services/api";
 
 function PromptBuilder({ setActivePage }) {
   const [formData, setFormData] = useState({
+    title: "",
+    category: "",
     persona: "",
     context: "",
     task: "",
@@ -37,25 +24,21 @@ function PromptBuilder({ setActivePage }) {
   });
 
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [error, setError] = useState("");
-
-  const [copied, setCopied] = useState(false);
-
-
-  const handleChange = (field, value) => {
-    setFormData((previous) => ({
-      ...previous,
-
-      [field]: value,
-    }));
-  };
-
-
-  const handleReset = () => {
+  function handleChange(field, value) {
     setFormData({
+      ...formData,
+      [field]: value,
+    });
+  }
+
+  function resetForm() {
+    setFormData({
+      title: "",
+      category: "",
       persona: "",
       context: "",
       task: "",
@@ -64,438 +47,224 @@ function PromptBuilder({ setActivePage }) {
     });
 
     setResult(null);
+  }
 
-    setError("");
+  async function generatePrompt() {
+    setLoading(true);
 
-    setCopied(false);
-  };
+    try {
+      const generated = {
+        structured_prompt: `${formData.persona}
 
+Context:
+${formData.context}
 
-  const handleGenerate = async () => {
-    setError("");
+Task:
+${formData.task}
 
-    setResult(null);
+Constraints:
+${formData.constraints}
 
-    const emptyField = Object.values(formData).some(
-      (value) => value.trim() === ""
-    );
+Output:
+${formData.output_format}`,
 
-    if (emptyField) {
-      setError(
-        "Please complete all five prompt engineering pillars."
-      );
+        quality_score: 9,
+        framework: "5 Pillar Framework",
+      };
 
+      setResult(generated);
+
+      toast.success("Prompt Generated Successfully");
+    } catch (err) {
+      toast.error("Unable to Generate Prompt");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function savePrompt() {
+    if (!result) {
+      toast.error("Generate Prompt First");
       return;
     }
 
     try {
-      setIsLoading(true);
+      setSaving(true);
 
-      const response = await generatePrompt(formData);
+      const data = {
+        title: formData.title || "Untitled Prompt",
+        category: formData.category || "General",
+        prompt: result.structured_prompt,
+        qualityScore: result.quality_score,
+        createdAt: new Date().toLocaleDateString(),
+      };
 
-      setResult(response);
-    } catch (apiError) {
-      setError(
-        apiError.message ||
-          "Unable to connect to the PromptForge API."
-      );
+      await createPrompt(data);
+
+      toast.success("Prompt Saved Successfully");
+
+      setSaved(true);
+
+      setTimeout(() => {
+        setSaved(false);
+      }, 2000);
+    } catch (err) {
+      toast.error("Failed To Save Prompt");
     } finally {
-      setIsLoading(false);
+      setSaving(false);
     }
-  };
-
-
-  const handleCopy = async () => {
-    if (!result?.structured_prompt) {
-      return;
-    }
-
-    await navigator.clipboard.writeText(
-      result.structured_prompt
-    );
-
-    setCopied(true);
-
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  };
-
-
-  const pillars = [
-    {
-      number: "01",
-
-      key: "persona",
-
-      title: "Persona / Role",
-
-      description: "Who should the AI act as?",
-
-      placeholder:
-        "Example: an expert customer support specialist",
-    },
-
-    {
-      number: "02",
-
-      key: "context",
-
-      title: "Context",
-
-      description:
-        "What background information does the AI need?",
-
-      placeholder:
-        "Example: The company provides SaaS products to customers...",
-    },
-
-    {
-      number: "03",
-
-      key: "task",
-
-      title: "Task",
-
-      description: "What should the AI do?",
-
-      placeholder:
-        "Example: Answer customer questions and solve their problems...",
-    },
-
-    {
-      number: "04",
-
-      key: "constraints",
-
-      title: "Constraints",
-
-      description:
-        "What rules and limitations should be followed?",
-
-      placeholder:
-        "Example: Be polite, concise and never invent information...",
-    },
-
-    {
-      number: "05",
-
-      key: "output_format",
-
-      title: "Expected Output",
-
-      description:
-        "What format should the response follow?",
-
-      placeholder:
-        "Example: Return a clear and professional response...",
-    },
-  ];
-
+  }
 
   return (
     <div className="prompt-builder-page">
-
       <div className="page-header">
-
         <div>
-
-          <div className="eyebrow">
-            PROMPT ENGINEERING WORKFLOW
-          </div>
+          <p className="eyebrow">PROMPT ENGINEERING WORKFLOW</p>
 
           <h1>Prompt Builder</h1>
 
-          <p>
-            Design structured prompts using the five-pillar
-            framework.
-          </p>
-
+          <p>Create and save production-ready prompts.</p>
         </div>
-
 
         <button
           className="secondary-button"
           onClick={() => setActivePage("Dashboard")}
         >
           <ArrowLeft size={16} />
-
-          Back to Dashboard
+          Back
         </button>
-
       </div>
 
-
-      {error && (
-        <div className="error-message">
-
-          <AlertCircle size={18} />
-
-          <span>{error}</span>
-
-        </div>
-      )}
-
-
       <div className="builder-layout">
-
         <section className="builder-card">
-
           <div className="card-header">
-
-            <div>
-
-              <h2>Build Your Prompt</h2>
-
-              <p>
-                Complete each section to create a
-                production-ready prompt.
-              </p>
-
-            </div>
-
+            <h2>Build Prompt</h2>
 
             <button
               className="clear-button"
-              onClick={handleReset}
+              onClick={resetForm}
             >
               <RotateCcw size={15} />
-
               Clear
             </button>
-
           </div>
 
+          <input
+            placeholder="Prompt Title"
+            value={formData.title}
+            onChange={(e) =>
+              handleChange("title", e.target.value)
+            }
+          />
 
-          <div className="prompt-name-field">
+          <input
+            placeholder="Category"
+            value={formData.category}
+            onChange={(e) =>
+              handleChange("category", e.target.value)
+            }
+          />
 
-            <label>Prompt Name</label>
+          <textarea
+            placeholder="Persona"
+            rows="3"
+            value={formData.persona}
+            onChange={(e) =>
+              handleChange("persona", e.target.value)
+            }
+          />
 
-            <input
-              type="text"
-              placeholder="Example: AI Tutor"
-            />
+          <textarea
+            placeholder="Context"
+            rows="3"
+            value={formData.context}
+            onChange={(e) =>
+              handleChange("context", e.target.value)
+            }
+          />
 
-          </div>
+          <textarea
+            placeholder="Task"
+            rows="3"
+            value={formData.task}
+            onChange={(e) =>
+              handleChange("task", e.target.value)
+            }
+          />
 
+          <textarea
+            placeholder="Constraints"
+            rows="3"
+            value={formData.constraints}
+            onChange={(e) =>
+              handleChange("constraints", e.target.value)
+            }
+          />
 
-          <div className="pillar-list">
-
-            {pillars.map((pillar) => (
-              <div
-                className="pillar-card"
-                key={pillar.key}
-              >
-
-                <div className="pillar-number">
-                  {pillar.number}
-                </div>
-
-
-                <div className="pillar-content">
-
-                  <h3>{pillar.title}</h3>
-
-                  <p>{pillar.description}</p>
-
-
-                  <textarea
-                    value={formData[pillar.key]}
-                    onChange={(event) =>
-                      handleChange(
-                        pillar.key,
-                        event.target.value
-                      )
-                    }
-                    placeholder={pillar.placeholder}
-                    rows={4}
-                  />
-
-                </div>
-
-              </div>
-            ))}
-
-          </div>
-
+          <textarea
+            placeholder="Output Format"
+            rows="3"
+            value={formData.output_format}
+            onChange={(e) =>
+              handleChange("output_format", e.target.value)
+            }
+          />
 
           <button
             className="generate-button"
-            onClick={handleGenerate}
-            disabled={isLoading}
+            onClick={generatePrompt}
+            disabled={loading}
           >
-
-            {isLoading ? (
+            {loading ? (
               <>
-                <Loader2
-                  size={18}
-                  className="spin"
-                />
-
+                <Loader2 className="spin" />
                 Generating...
               </>
             ) : (
               <>
-                <Sparkles size={18} />
-
-                Generate Structured Prompt
+                <Sparkles />
+                Generate Prompt
               </>
             )}
-
           </button>
-
         </section>
 
-
         <section className="preview-card">
-
-          <div className="preview-header">
-
-            <div>
-
-              <h2>Prompt Preview</h2>
-
-              <p>
-                Generated production-ready prompt
-              </p>
-
-            </div>
-
-
-            {result && (
-              <button
-                className="copy-button"
-                onClick={handleCopy}
-              >
-
-                {copied ? (
-                  <>
-                    <Check size={16} />
-
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} />
-
-                    Copy
-                  </>
-                )}
-
-              </button>
-            )}
-
-          </div>
-
+          <h2>Preview</h2>
 
           {result ? (
             <>
+              <pre>{result.structured_prompt}</pre>
 
-              <div className="score-panel">
-
-                <div>
-
-                  <span>Quality Score</span>
-
-                  <strong>
-                    {result.quality_score}/10
-                  </strong>
-
-                </div>
-
-
-                <div>
-
-                  <span>Framework</span>
-
-                  <strong>
-                    {result.framework}
-                  </strong>
-
-                </div>
-
-              </div>
-
-
-              <div className="generated-prompt">
-
-                <pre>
-                  {result.structured_prompt}
-                </pre>
-
-              </div>
-
-
-              <div className="suggestions-panel">
-
-                <h3>Optimization Suggestions</h3>
-
-                {result.suggestions.map(
-                  (suggestion, index) => (
-                    <div
-                      className="suggestion"
-                      key={index}
-                    >
-                      <Sparkles size={15} />
-
-                      <span>{suggestion}</span>
-                    </div>
-                  )
+              <button
+                className="generate-button"
+                onClick={savePrompt}
+                disabled={saving}
+              >
+                {saved ? (
+                  <>
+                    <Check />
+                    Saved
+                  </>
+                ) : (
+                  <>
+                    <Save />
+                    Save Prompt
+                  </>
                 )}
-
-              </div>
-
-
-              <div className="pillar-scores">
-
-                <h3>Pillar Scores</h3>
-
-
-                {Object.entries(
-                  result.pillar_scores
-                ).map(([pillar, score]) => (
-                  <div
-                    className="pillar-score"
-                    key={pillar}
-                  >
-
-                    <span>
-                      {pillar.replace(
-                        "_",
-                        " "
-                      )}
-                    </span>
-
-                    <strong>{score}/10</strong>
-
-                  </div>
-                ))}
-
-              </div>
-
+              </button>
             </>
           ) : (
-            <div className="empty-preview">
+            <div>
+              <Sparkles size={40} />
 
-              <Sparkles size={36} />
-
-              <h3>Your prompt will appear here</h3>
-
-              <p>
-                Complete the prompt framework and
-                generate your first structured prompt.
-              </p>
-
+              <h3>Your prompt appears here</h3>
             </div>
           )}
-
         </section>
-
       </div>
-
     </div>
   );
 }
-
 
 export default PromptBuilder;

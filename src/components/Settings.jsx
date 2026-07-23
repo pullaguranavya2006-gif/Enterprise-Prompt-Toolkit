@@ -1,269 +1,109 @@
-import { useState, useEffect } from "react";
-import {
-  Settings,
-  User,
-  Moon,
-  Sun,
-  Bell,
-  Save,
-  RotateCcw,
-} from "lucide-react";
+import { useEffect, useState } from "react";
 
-function SettingsPage() {
+function Settings() {
   const [settings, setSettings] = useState({
-    username: "Navya",
-    email: "navya@example.com",
-    darkMode: false,
-    notifications: true,
+    theme: "Light",
+    apiUrl: "http://127.0.0.1:8000",
+    defaultModel: "GPT-4",
+    autoSave: true,
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem("promptforge_settings");
-
+    const saved = localStorage.getItem("settings");
     if (saved) {
       setSettings(JSON.parse(saved));
     }
   }, []);
 
-  const handleChange = (field, value) => {
-    setSettings((old) => ({
-      ...old,
+  function handleChange(field, value) {
+    setSettings((prev) => ({
+      ...prev,
       [field]: value,
     }));
-  };
+  }
 
-  const saveSettings = () => {
+  function saveSettings() {
     localStorage.setItem(
-      "promptforge_settings",
+      "settings",
       JSON.stringify(settings)
     );
 
-    alert("Settings saved successfully.");
-  };
-
-  const resetSettings = () => {
-    const defaults = {
-      username: "Navya",
-      email: "navya@example.com",
-      darkMode: false,
-      notifications: true,
-    };
-
-    setSettings(defaults);
-
-    localStorage.setItem(
-      "promptforge_settings",
-      JSON.stringify(defaults)
-    );
-  };
+    alert("Settings Saved Successfully");
+  }
 
   return (
-    <div className="evaluator-page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">
-            APPLICATION SETTINGS
-          </p>
+    <div style={{ padding: "40px" }}>
+      <h1>Settings</h1>
 
-          <h1>Settings</h1>
+      <br />
 
-          <p className="subtitle">
-            Customize your Prompt Engineering Toolkit.
-          </p>
-        </div>
+      <label>Theme</label>
 
-        <button
-          className="secondary-button"
-          onClick={resetSettings}
-        >
-          <RotateCcw size={16} />
-          Reset
-        </button>
-      </div>
+      <select
+        value={settings.theme}
+        onChange={(e) =>
+          handleChange("theme", e.target.value)
+        }
+      >
+        <option>Light</option>
+        <option>Dark</option>
+        <option>System</option>
+      </select>
 
-      <div className="evaluator-grid">
-        <div className="evaluator-input-card">
-          <div className="card-heading">
-            <div>
-              <h2>Profile</h2>
+      <br />
+      <br />
 
-              <p>
-                Update your workspace information.
-              </p>
-            </div>
+      <label>API URL</label>
 
-            <User size={22} />
-          </div>
+      <input
+        type="text"
+        value={settings.apiUrl}
+        onChange={(e) =>
+          handleChange("apiUrl", e.target.value)
+        }
+        style={{ width: "400px" }}
+      />
 
-          <label>Name</label>
+      <br />
+      <br />
 
-          <input
-            className="evaluator-textarea"
-            style={{ height: "45px" }}
-            value={settings.username}
-            onChange={(e) =>
-              handleChange(
-                "username",
-                e.target.value
-              )
-            }
-          />
+      <label>Default Model</label>
 
-          <label style={{ marginTop: "20px" }}>
-            Email
-          </label>
+      <select
+        value={settings.defaultModel}
+        onChange={(e) =>
+          handleChange("defaultModel", e.target.value)
+        }
+      >
+        <option>GPT-4</option>
+        <option>Claude</option>
+        <option>Gemini</option>
+        <option>Llama</option>
+      </select>
 
-          <input
-            className="evaluator-textarea"
-            style={{ height: "45px" }}
-            value={settings.email}
-            onChange={(e) =>
-              handleChange(
-                "email",
-                e.target.value
-              )
-            }
-          />
+      <br />
+      <br />
 
-          <button
-            className="generate-button"
-            onClick={saveSettings}
-          >
-            <Save size={18} />
-            Save Settings
-          </button>
-        </div>
+      <label>
+        <input
+          type="checkbox"
+          checked={settings.autoSave}
+          onChange={(e) =>
+            handleChange("autoSave", e.target.checked)
+          }
+        />
 
-        <div className="evaluation-result-card">
-          <div className="card-heading">
-            <div>
-              <h2>Preferences</h2>
+        Enable Auto Save
+      </label>
 
-              <p>
-                Configure your application.
-              </p>
-            </div>
+      <br />
+      <br />
 
-            <Settings size={22} />
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent:
-                "space-between",
-              alignItems: "center",
-              marginTop: "25px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                alignItems: "center",
-              }}
-            >
-              {settings.darkMode ? (
-                <Moon />
-              ) : (
-                <Sun />
-              )}
-
-              <span>Dark Mode</span>
-            </div>
-
-            <input
-              type="checkbox"
-              checked={settings.darkMode}
-              onChange={(e) =>
-                handleChange(
-                  "darkMode",
-                  e.target.checked
-                )
-              }
-            />
-          </div>
-
-          <hr
-            style={{
-              margin: "20px 0",
-            }}
-          />
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent:
-                "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                alignItems: "center",
-              }}
-            >
-              <Bell />
-
-              <span>
-                Notifications
-              </span>
-            </div>
-
-            <input
-              type="checkbox"
-              checked={
-                settings.notifications
-              }
-              onChange={(e) =>
-                handleChange(
-                  "notifications",
-                  e.target.checked
-                )
-              }
-            />
-          </div>
-
-          <div
-            style={{
-              marginTop: "40px",
-              background: "#eef2ff",
-              padding: "20px",
-              borderRadius: "12px",
-            }}
-          >
-            <h3>Workspace Summary</h3>
-
-            <p>
-              <strong>User:</strong>{" "}
-              {settings.username}
-            </p>
-
-            <p>
-              <strong>Email:</strong>{" "}
-              {settings.email}
-            </p>
-
-            <p>
-              <strong>Theme:</strong>{" "}
-              {settings.darkMode
-                ? "Dark"
-                : "Light"}
-            </p>
-
-            <p>
-              <strong>Notifications:</strong>{" "}
-              {settings.notifications
-                ? "Enabled"
-                : "Disabled"}
-            </p>
-          </div>
-        </div>
-      </div>
+      <button onClick={saveSettings}>
+        Save Settings
+      </button>
     </div>
   );
 }
 
-export default SettingsPage;
+export default Settings;

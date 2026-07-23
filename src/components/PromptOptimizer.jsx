@@ -1,168 +1,213 @@
 import { useState } from "react";
-import { Wand2, Copy, RotateCcw } from "lucide-react";
+import {
+  Sparkles,
+  Loader2,
+  Wand2,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
+
+import { optimizePrompt } from "../services/api";
 
 function PromptOptimizer() {
-  const [originalPrompt, setOriginalPrompt] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [optimizedPrompt, setOptimizedPrompt] = useState("");
+  const [quality, setQuality] = useState(0);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const optimizePrompt = () => {
-    if (originalPrompt.trim() === "") {
-      alert("Please enter a prompt.");
+  async function handleOptimize() {
+    if (!prompt.trim()) {
+      setError("Please enter a prompt.");
       return;
     }
 
-    const optimized = `You are an expert AI assistant.
+    try {
+      setLoading(true);
+      setError("");
 
-Task:
-${originalPrompt}
+      const result = await optimizePrompt(prompt);
 
-Instructions:
-• Think step by step.
-• Provide accurate information.
-• Be concise.
-• Use bullet points wherever possible.
-• Do not make assumptions.
-• Explain clearly.
-• Return the response in professional language.
-
-End of Prompt.`;
-
-    setOptimizedPrompt(optimized);
-  };
-
-  const copyPrompt = () => {
-    navigator.clipboard.writeText(optimizedPrompt);
-    alert("Optimized Prompt Copied");
-  };
-
-  const clearPrompt = () => {
-    setOriginalPrompt("");
-    setOptimizedPrompt("");
-  };
+      setOptimizedPrompt(result.optimized_prompt);
+      setQuality(result.quality_score);
+      setSuggestions(result.suggestions || []);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Optimization failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <div
-      style={{
-        padding: "40px",
-        background: "#f8fafc",
-        minHeight: "100vh",
-      }}
-    >
-      <h1>⚡ Prompt Optimizer</h1>
-
-      <p
-        style={{
-          color: "#64748b",
-          marginBottom: "25px",
-        }}
-      >
-        Improve weak prompts into professional AI prompts.
-      </p>
-
-      <div
-        style={{
-          background: "#fff",
-          padding: "25px",
-          borderRadius: "12px",
-          boxShadow: "0 5px 15px rgba(0,0,0,.08)",
-        }}
-      >
-        <h3>Original Prompt</h3>
-
-        <textarea
-          rows="8"
-          value={originalPrompt}
-          onChange={(e) =>
-            setOriginalPrompt(e.target.value)
-          }
-          placeholder="Enter your prompt..."
-          style={{
-            width: "100%",
-            padding: "15px",
-            borderRadius: "8px",
-            border: "1px solid #ccc",
-            fontSize: "15px",
-          }}
-        />
-
-        <div
-          style={{
-            display: "flex",
-            gap: "15px",
-            marginTop: "20px",
-          }}
-        >
-          <button
-            onClick={optimizePrompt}
-            style={{
-              background: "#4f46e5",
-              color: "white",
-              border: "none",
-              padding: "12px 22px",
-              borderRadius: "8px",
-              cursor: "pointer",
-            }}
-          >
-            <Wand2 size={18} />
-            Optimize
-          </button>
-
-          <button
-            onClick={copyPrompt}
-            style={{
-              background: "#10b981",
-              color: "white",
-              border: "none",
-              padding: "12px 22px",
-              borderRadius: "8px",
-              cursor: "pointer",
-            }}
-          >
-            <Copy size={18} />
-            Copy
-          </button>
-
-          <button
-            onClick={clearPrompt}
-            style={{
-              background: "#ef4444",
-              color: "white",
-              border: "none",
-              padding: "12px 22px",
-              borderRadius: "8px",
-              cursor: "pointer",
-            }}
-          >
-            <RotateCcw size={18} />
-            Clear
-          </button>
+    <div className="page-container">
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">PROMPT IMPROVEMENT</p>
+          <h1>Prompt Optimizer</h1>
+          <p>
+            Improve existing prompts using Prompt Engineering best practices.
+          </p>
         </div>
       </div>
 
       <div
         style={{
-          background: "#fff",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "30px",
           marginTop: "30px",
-          padding: "25px",
-          borderRadius: "12px",
-          boxShadow: "0 5px 15px rgba(0,0,0,.08)",
         }}
       >
-        <h3>Optimized Prompt</h3>
+        {/* Left Side */}
+        <div className="card">
+          <h2>Original Prompt</h2>
 
-        <textarea
-          readOnly
-          rows="12"
-          value={optimizedPrompt}
-          style={{
-            width: "100%",
-            padding: "15px",
-            borderRadius: "8px",
-            border: "1px solid #ccc",
-            background: "#f8fafc",
-            fontSize: "15px",
-          }}
-        />
+          <textarea
+            rows={15}
+            placeholder="Paste your prompt here..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "15px",
+              borderRadius: "10px",
+              border: "1px solid #d1d5db",
+              resize: "vertical",
+              marginTop: "15px",
+            }}
+          />
+
+          {error && (
+            <div
+              style={{
+                marginTop: "15px",
+                color: "red",
+                display: "flex",
+                gap: "8px",
+                alignItems: "center",
+              }}
+            >
+              <AlertCircle size={18} />
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={handleOptimize}
+            disabled={loading}
+            className="generate-button"
+            style={{
+              marginTop: "20px",
+              width: "100%",
+            }}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="spin" size={18} />
+                Optimizing...
+              </>
+            ) : (
+              <>
+                <Wand2 size={18} />
+                Optimize Prompt
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Right Side */}
+        <div className="card">
+          <h2>Optimized Prompt</h2>
+
+          {optimizedPrompt ? (
+            <>
+              <textarea
+                rows={15}
+                value={optimizedPrompt}
+                readOnly
+                style={{
+                  width: "100%",
+                  padding: "15px",
+                  borderRadius: "10px",
+                  border: "1px solid #d1d5db",
+                  background: "#f8fafc",
+                  resize: "vertical",
+                  marginTop: "15px",
+                }}
+              />
+
+              <div
+                style={{
+                  marginTop: "20px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <h3>
+                  Quality Score:
+                  <span
+                    style={{
+                      color: "#2563eb",
+                      marginLeft: "8px",
+                    }}
+                  >
+                    {quality}/10
+                  </span>
+                </h3>
+              </div>
+
+              <div style={{ marginTop: "20px" }}>
+                <h3>Suggestions</h3>
+
+                {suggestions.length === 0 ? (
+                  <p>No suggestions.</p>
+                ) : (
+                  suggestions.map((item, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        alignItems: "flex-start",
+                        marginTop: "12px",
+                        padding: "10px",
+                        background: "#eff6ff",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <CheckCircle
+                        size={18}
+                        color="green"
+                      />
+
+                      <span>{item}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "120px 20px",
+                color: "#64748b",
+              }}
+            >
+              <Sparkles size={50} />
+
+              <h3 style={{ marginTop: "15px" }}>
+                Optimized prompt will appear here
+              </h3>
+
+              <p>
+                Enter a prompt and click <b>Optimize Prompt</b>.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
