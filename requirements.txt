@@ -4,3 +4,7 @@ sqlalchemy
 pydantic
 python-multipart
 reportlab
+
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
