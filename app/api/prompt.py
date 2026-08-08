@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
@@ -14,11 +14,16 @@ from app.crud.prompt import (
     delete_prompt,
 )
 
+
 router = APIRouter(
     prefix="/prompts",
     tags=["Prompts"],
 )
 
+
+# --------------------------------------------------
+# Database Dependency
+# --------------------------------------------------
 
 def get_db():
     db = SessionLocal()
@@ -29,6 +34,10 @@ def get_db():
         db.close()
 
 
+# --------------------------------------------------
+# Create Prompt
+# --------------------------------------------------
+
 @router.post(
     "/",
     response_model=PromptResponse,
@@ -37,8 +46,23 @@ def add_prompt(
     prompt: PromptCreate,
     db: Session = Depends(get_db),
 ):
-    return create_prompt(db, prompt)
+    try:
+        return create_prompt(db, prompt)
 
+    except Exception as e:
+        db.rollback()
+
+        print("ERROR CREATING PROMPT:", str(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save prompt: {str(e)}"
+        )
+
+
+# --------------------------------------------------
+# Get All Prompts
+# --------------------------------------------------
 
 @router.get(
     "/",
@@ -50,13 +74,30 @@ def all_prompts(
     return get_prompts(db)
 
 
-@router.delete("/{prompt_id}")
+# --------------------------------------------------
+# Delete Prompt
+# --------------------------------------------------
+
+@router.delete(
+    "/{prompt_id}"
+)
 def remove_prompt(
     prompt_id: int,
     db: Session = Depends(get_db),
 ):
-    delete_prompt(db, prompt_id)
+    try:
+        delete_prompt(db, prompt_id)
 
-    return {
-        "message": "Prompt Deleted Successfully"
-    }
+        return {
+            "message": "Prompt Deleted Successfully"
+        }
+
+    except Exception as e:
+        db.rollback()
+
+        print("ERROR DELETING PROMPT:", str(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete prompt: {str(e)}"
+        )

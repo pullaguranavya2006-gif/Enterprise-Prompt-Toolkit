@@ -1,21 +1,11 @@
 from pydantic import BaseModel
-from typing import Optional
 
 
 class PromptCreate(BaseModel):
     title: str
-    category: str
+    category: str = "General"
     prompt: str
-    qualityScore: int
-    createdAt: str
-
-
-class PromptUpdate(BaseModel):
-    title: Optional[str] = None
-    category: Optional[str] = None
-    prompt: Optional[str] = None
-    qualityScore: Optional[int] = None
-    createdAt: Optional[str] = None
+    qualityScore: int = 0
 
 
 class PromptResponse(BaseModel):
@@ -24,7 +14,6 @@ class PromptResponse(BaseModel):
     category: str
     prompt: str
     qualityScore: int
-    createdAt: str
 
     class Config:
         from_attributes = True

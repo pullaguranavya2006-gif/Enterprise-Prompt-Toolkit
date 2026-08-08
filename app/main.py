@@ -21,8 +21,17 @@ from app.api.analytics import router as analytics_router
 from app.api.settings import router as settings_router
 from app.api.dashboard import router as dashboard_router
 
+
+# --------------------------------------------------
 # Create Database Tables
+# --------------------------------------------------
+
 Base.metadata.create_all(bind=engine)
+
+
+# --------------------------------------------------
+# Create FastAPI Application
+# --------------------------------------------------
 
 app = FastAPI(
     title="Enterprise Prompt Engineering Toolkit API",
@@ -30,7 +39,11 @@ app = FastAPI(
     description="Backend API for Enterprise Prompt Engineering Toolkit"
 )
 
+
+# --------------------------------------------------
 # Enable CORS
+# --------------------------------------------------
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,10 +52,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# --------------------------------------------------
 # Register Routers
+# --------------------------------------------------
+
 app.include_router(auth_router)
 app.include_router(user_router)
-app.include_router(prompt_router)
+
+# IMPORTANT:
+# Add /api prefix to Prompt routes
+app.include_router(
+    prompt_router,
+    prefix="/api"
+)
+
 app.include_router(version_router)
 app.include_router(optimizer_router)
 app.include_router(evaluator_router)
@@ -53,6 +77,10 @@ app.include_router(settings_router)
 app.include_router(dashboard_router)
 
 
+# --------------------------------------------------
+# Home Route
+# --------------------------------------------------
+
 @app.get("/")
 def home():
     return {
@@ -60,12 +88,4 @@ def home():
         "version": "1.0",
         "database": "SQLite Connected",
         "project": "Enterprise Prompt Engineering Toolkit"
-    }
-
-
-@app.get("/health")
-def health():
-    return {
-        "status": "Healthy",
-        "message": "API is running successfully."
     }
